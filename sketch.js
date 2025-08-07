@@ -94,6 +94,17 @@ function mouseClicked() {
   }
 
   expandEmptyCells(x, y);
+
+  const visibleCellsCount = Object.values(visibleCells).reduce(
+    (acc, val) => (acc += Object.keys(val).length),
+    0
+  );
+
+  if (visibleCellsCount >= rows * cols - minesCount) {
+    isGameOver = true;
+
+    setTimeout(() => alert("you win"));
+  }
 }
 
 /** Utilities */
