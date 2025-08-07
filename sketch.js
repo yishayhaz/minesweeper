@@ -4,12 +4,18 @@ const minesCount = 10;
 
 const cellSize = 40;
 let isGameOver = false;
+let isFlagging = false;
 
 const matrix = Array.from({ length: cols }, () =>
   Array.from({ length: rows }, () => 0)
 );
 
 const visibleCells = Array.from({ length: cols }, (_, i) => i).reduce(
+  (acc, val) => ({ ...acc, [val]: {} }),
+  {}
+);
+
+const flaggedCells = Array.from({ length: cols }, (_, i) => i).reduce(
   (acc, val) => ({ ...acc, [val]: {} }),
   {}
 );
@@ -39,7 +45,7 @@ function setup() {
   textSize(16);
   textAlign(CENTER, CENTER);
 
-  createCanvas(400, 400);
+  createCanvas(rows * cellSize, cols * cellSize);
 
   plantMines();
   placeClues();
@@ -47,7 +53,16 @@ function setup() {
   window.game = {
     matrix,
     visibleCells,
+    flaggedCells,
   };
+
+  let button = createButton("Play mode");
+
+  button.mousePressed(() => {
+    isFlagging = !isFlagging;
+
+    button.elt.innerHTML = ["Play mode", "Flag mode"][Number(isFlagging)];
+  });
 }
 
 function draw() {
@@ -63,11 +78,13 @@ function draw() {
 
       noFill();
 
-      if (isVisible(x, y) || isGameOver) {
+      if (isFlagged(x, y)) {
+        text("🚩", l + 16, t + 24);
+      } else if (isVisible(x, y) || isGameOver) {
         if (isEmpty(x, y)) {
           fill(100);
         } else if (isMine(x, y)) {
-          fill(255, 0, 0);
+          text("💣", l + 16, t + 24);
         } else {
           // Draw text
           text(cell, l + 16, t + 24);
@@ -86,6 +103,15 @@ function mouseClicked() {
 
   const x = floor(mouseX / cellSize);
   const y = floor(mouseY / cellSize);
+
+  if (isOutOfBounds(x, y)) return;
+
+  if (isFlagging) {
+    flaggedCells[y][x] = !flaggedCells[y][x];
+    return;
+  }
+
+  if (isFlagged(x, y)) return;
 
   if (isMine(x, y)) {
     isGameOver = true;
@@ -116,7 +142,8 @@ const isClue = (x, y) => (matrix[y]?.[x] ?? 0) > 0;
 const isEmpty = (x, y) => !matrix[y]?.[x];
 const isOutOfBounds = (x, y) => x < 0 || x >= rows || y >= cols || y < 0;
 
-const isVisible = (x, y) => visibleCells[y][x] === true;
+const isVisible = (x, y) => visibleCells[y]?.[x] === true;
+const isFlagged = (x, y) => flaggedCells[y]?.[x] === true;
 
 const getMinesCountAroundCell = (x, y) => {
   let c = 0;
